@@ -4,7 +4,11 @@ const dotenv = require('dotenv');
 
 // MODELS
 const { User } = require('../models/userModel');
+const { Order } = require('../models/orderModel');
+const  {Cart } = require('../models/cartModel');
 const { Product } = require('../models/productModel');
+const { ProductInCart } = require('../models/productsInCartModel');
+const { Category } = require('../models/categoryModel');
 
 // UTILS
 const { catchAsync } = require('../utils/catchAsync');
@@ -106,11 +110,61 @@ const login = catchAsync(async (req, res, next) => {
   });
 
   const getUserOrder = catchAsync(async (req, res, next) => {
-    res.status(200).json({ status: 'success' });
+    const { sessionUser } = req;
+
+    const orders = await Order.findAll({ 
+      attributes: [ 'id', 'totalPrice', 'createdAt' ],
+      where: { userId: sessionUser.id },
+      include: [
+        {  
+        model: Cart,
+        attributes: [ 'id', 'status' ],
+        include: [
+        {
+          model: ProductInCart,
+          attributes: [ 'quantity', 'status' ],
+          include: [
+            { 
+            model: Product,
+            attributes: [ 'id', 'title', 'description', 'price' ],
+            include: [{ model: Category, attributes: ['name'] }],
+          },
+        ],
+        },
+      ], 
+    },
+  ],
+     });
+    res.status(200).json({ status: 'success', orders });
   });
 
   const getUserOrderById = catchAsync(async (req, res, next) => {
-    res.status(200).json({ status: 'success' });
+    const { sessionUser } = req;
+
+    const orders = await Order.findOne({ 
+      attributes: [ 'id', 'totalPrice', 'createdAt' ],
+      where: { userId: sessionUser.id },
+      include: [
+        {  
+        model: Cart,
+        attributes: [ 'id', 'status' ],
+        include: [
+        {
+          model: ProductInCart,
+          attributes: [ 'quantity', 'status' ],
+          include: [
+            { 
+            model: Product,
+            attributes: [ 'id', 'title', 'description', 'price' ],
+            include: [{ model: Category, attributes: ['name'] }],
+          },
+        ],
+        },
+      ], 
+    },
+  ],
+     });
+    res.status(200).json({ status: 'success', orders });
   });
   
 module.exports = { 
