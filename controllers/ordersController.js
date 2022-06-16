@@ -170,7 +170,8 @@ const purchaseCart = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: 'success', newOrder });
 });
 const removeProductFromCart = catchAsync(async (req, res, next) => {
-  const { product, sessionUser } = req;
+  const { productId } = req.params;
+  const { sessionUser } = req;
 
   // Get user's cart
   const cart = await Cart.findOne({
@@ -180,22 +181,21 @@ const removeProductFromCart = catchAsync(async (req, res, next) => {
   if (!cart) {
     return next(new AppError('Must create a cart first', 400));
   }
-
-  const productInCart = await ProductInCart.findOne({
-    where: { status: 'active', cartId: cart.id, product },
+  // validate that the product in the cart
+  const removeProduct = await ProductInCart.findOne({
+    where: { status: 'active', cartId: cart.id, productId },
     include: [{ model: Product }],
   });
 
-  if (!productInCart) {
-    return next(new AppError('This product does not exist in your cart', 404));
+  if (ProductInCart.quantity === 0) {
+    await ProductInCart.update({ status: 'removed' });
   }
 
-  await product.update({ status: 'deleted'});
+  await removeProduct.update({ status: 'removed' });
 
-  res.status(200).json({
-      status: 'success',
-  });
+  res.status(200).json({ status: 'success' });
 });
+
 module.exports = {
     getUserCart,
     addProductToCard,
